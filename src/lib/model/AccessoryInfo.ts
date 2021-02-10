@@ -90,7 +90,7 @@ export class AccessoryInfo {
   listPairings = () => {
     const array = [] as PairingInformation[];
 
-    for (const username in this.pairedClients) {
+    for (const username of Object.keys(this.pairedClients)) {
       const pairingInformation = this.pairedClients[username] as PairingInformation;
       array.push(pairingInformation);
     }
@@ -107,7 +107,7 @@ export class AccessoryInfo {
     this._removePairedClient0(controller, username);
 
     if (this.pairedAdminClients === 0) { // if we don't have any admin clients left paired it is required to kill all normal clients
-      for (const username0 in this.pairedClients) {
+      for (const username0 of Object.keys(this.pairedClients)) {
         this._removePairedClient0(controller, username0);
       }
     }
@@ -188,8 +188,7 @@ export class AccessoryInfo {
       setupID: this.setupID,
     };
 
-    for (var username in this.pairedClients) {
-      const pairingInformation = this.pairedClients[username];
+    for (const [username, pairingInformation] of Object.entries(this.pairedClients)) {
       //@ts-ignore
       saved.pairedClients[username] = pairingInformation.publicKey.toString('hex');
       // @ts-ignore
@@ -234,8 +233,8 @@ export class AccessoryInfo {
       info.signPk = Buffer.from(saved.signPk || '', 'hex');
 
       info.pairedClients = {};
-      for (var username in saved.pairedClients || {}) {
-        var publicKey = saved.pairedClients[username];
+      for (const username of Object.keys(saved.pairedClients || {})) {
+        var publicKey = saved.pairedClients[username]
         let permission = saved.pairedClientsPermission? saved.pairedClientsPermission[username]: undefined;
         if (permission === undefined)
           permission = PermissionTypes.ADMIN; // defaulting to admin permissions is the only suitable solution, there is no way to recover permissions

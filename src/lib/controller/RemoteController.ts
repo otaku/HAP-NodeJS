@@ -460,8 +460,7 @@ export class RemoteController extends EventEmitter<RemoteControllerEventMap>
      * @returns the targetIdentifier of the device or undefined if not existent
      */
     getTargetIdentifierByName = (name: string) => {
-        for (const activeIdentifier in this.targetConfigurations) {
-            const configuration = this.targetConfigurations[activeIdentifier];
+        for (const [activeIdentifier, configuration] of Object.entries(this.targetConfigurations)) {
             if (configuration.targetName === name) {
                 return parseInt(activeIdentifier);
             }
@@ -647,11 +646,13 @@ export class RemoteController extends EventEmitter<RemoteControllerEventMap>
                 configuredTarget.targetName, configuredTarget.targetIdentifier);
 
             for (const key in targetConfiguration.buttonConfiguration) {
-                const configuration = targetConfiguration.buttonConfiguration[key];
-                const savedConfiguration = configuredTarget.buttonConfiguration[configuration.buttonID];
+                if (targetConfiguration.buttonConfiguration.hasOwnProperty(key)) {
+                    const configuration = targetConfiguration.buttonConfiguration[key];
+                    const savedConfiguration = configuredTarget.buttonConfiguration[configuration.buttonID];
 
-                savedConfiguration.buttonType = configuration.buttonType;
-                savedConfiguration.buttonName = configuration.buttonName;
+                    savedConfiguration.buttonType = configuration.buttonType;
+                    savedConfiguration.buttonName = configuration.buttonName;
+                }
             }
             updates.push(TargetUpdates.UPDATED_BUTTONS);
         }
@@ -674,7 +675,9 @@ export class RemoteController extends EventEmitter<RemoteControllerEventMap>
 
         if (targetConfiguration.buttonConfiguration) {
             for (const key in targetConfiguration.buttonConfiguration) {
-                delete configuredTarget.buttonConfiguration[key];
+                if (targetConfiguration.buttonConfiguration.hasOwnProperty(key)) {
+                    delete configuredTarget.buttonConfiguration[key];
+                }
             }
 
             debug("Removed %d button configurations of target '%s' (%d)",
@@ -874,49 +877,51 @@ export class RemoteController extends EventEmitter<RemoteControllerEventMap>
     private updatedTargetConfiguration = () => {
         const bufferList = [];
         for (const key in this.targetConfigurations) {
-            // noinspection JSUnfilteredForInLoop
-            const configuration = this.targetConfigurations[key];
+            if (this.targetConfigurations.hasOwnProperty(key)) {
+                // noinspection JSUnfilteredForInLoop
+                const configuration = this.targetConfigurations[key];
 
-            const targetIdentifier = tlv.encode(
-                TargetConfigurationTypes.TARGET_IDENTIFIER, tlv.writeUInt32(configuration.targetIdentifier)
-            );
-
-            const targetName = tlv.encode(
-                TargetConfigurationTypes.TARGET_NAME, configuration.targetName!
-            );
-
-            const targetCategory = tlv.encode(
-                TargetConfigurationTypes.TARGET_CATEGORY, tlv.writeUInt16(configuration.targetCategory!)
-            );
-
-            const buttonConfigurationBuffers: Buffer[] = [];
-            Object.values(configuration.buttonConfiguration).forEach(value => {
-                let tlvBuffer = tlv.encode(
-                    ButtonConfigurationTypes.BUTTON_ID, value.buttonID,
-                    ButtonConfigurationTypes.BUTTON_TYPE, tlv.writeUInt16(value.buttonType)
+                const targetIdentifier = tlv.encode(
+                    TargetConfigurationTypes.TARGET_IDENTIFIER, tlv.writeUInt32(configuration.targetIdentifier)
                 );
 
-                if (value.buttonName) {
-                    tlvBuffer = Buffer.concat([
-                        tlvBuffer,
-                        tlv.encode(
-                            ButtonConfigurationTypes.BUTTON_NAME, value.buttonName
-                        )
-                    ])
-                }
+                const targetName = tlv.encode(
+                    TargetConfigurationTypes.TARGET_NAME, configuration.targetName!
+                );
 
-                buttonConfigurationBuffers.push(tlvBuffer);
-            });
+                const targetCategory = tlv.encode(
+                    TargetConfigurationTypes.TARGET_CATEGORY, tlv.writeUInt16(configuration.targetCategory!)
+                );
 
-            const buttonConfiguration = tlv.encode(
-                TargetConfigurationTypes.BUTTON_CONFIGURATION, Buffer.concat(buttonConfigurationBuffers)
-            );
+                const buttonConfigurationBuffers: Buffer[] = [];
+                Object.values(configuration.buttonConfiguration).forEach(value => {
+                    let tlvBuffer = tlv.encode(
+                        ButtonConfigurationTypes.BUTTON_ID, value.buttonID,
+                        ButtonConfigurationTypes.BUTTON_TYPE, tlv.writeUInt16(value.buttonType)
+                    );
 
-            const targetConfiguration = Buffer.concat(
-                [targetIdentifier, targetName, targetCategory, buttonConfiguration]
-            );
+                    if (value.buttonName) {
+                        tlvBuffer = Buffer.concat([
+                            tlvBuffer,
+                            tlv.encode(
+                                ButtonConfigurationTypes.BUTTON_NAME, value.buttonName
+                            )
+                        ])
+                    }
 
-            bufferList.push(tlv.encode(TargetControlList.TARGET_CONFIGURATION, targetConfiguration));
+                    buttonConfigurationBuffers.push(tlvBuffer);
+                });
+
+                const buttonConfiguration = tlv.encode(
+                    TargetConfigurationTypes.BUTTON_CONFIGURATION, Buffer.concat(buttonConfigurationBuffers)
+                );
+
+                const targetConfiguration = Buffer.concat(
+                    [targetIdentifier, targetName, targetCategory, buttonConfiguration]
+                );
+
+                bufferList.push(tlv.encode(TargetControlList.TARGET_CONFIGURATION, targetConfiguration));
+            }
         }
 
         this.targetConfigurationsString = Buffer.concat(bufferList).toString('base64');
@@ -1048,11 +1053,13 @@ export class RemoteController extends EventEmitter<RemoteControllerEventMap>
 
     private handleDataStreamConnectionClosed = (connection: DataStreamConnection) => {
         for (const targetIdentifier in this.dataStreamConnections) {
-            const connection0 = this.dataStreamConnections[targetIdentifier];
-            if (connection === connection0) {
-                debug("HDS connection disconnected for targetIdentifier %s", targetIdentifier);
-                delete this.dataStreamConnections[targetIdentifier];
-                break;
+            if (this.dataStreamConnections.hasOwnProperty(targetIdentifier)) {
+                const connection0 = this.dataStreamConnections[targetIdentifier];
+                if (connection === connection0) {
+                    debug("HDS connection disconnected for targetIdentifier %s", targetIdentifier);
+                    delete this.dataStreamConnections[targetIdentifier];
+                    break;
+                }
             }
         }
     };

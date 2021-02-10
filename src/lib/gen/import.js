@@ -32,8 +32,7 @@ output.write("\n");
 // index Characteristics for quick access while building Services
 var characteristics = {}; // characteristics[UUID] = classyName
 
-for (var index in metadata.Characteristics) {
-  var characteristic = metadata.Characteristics[index];
+for (const characteristic of metadata.Characteristics) {
   var classyName = characteristic.Name.replace(/[\s\-]/g, ""); // "Target Door State" -> "TargetDoorState"
   classyName = classyName.replace(/[.]/g, "_"); // "PM2.5" -> "PM2_5"
 
@@ -64,10 +63,10 @@ for (var index in metadata.Characteristics) {
 
   output.write(",\n    perms: [");
   var sep = ""
-  for (var i in characteristic.Properties) {
-    var perms = getCharacteristicPermsKey(characteristic.Properties[i]);
+  for (const property of characteristic.Properties) {
+    var perms = getCharacteristicPermsKey(property);
     if (perms) {
-        output.write(sep + "Characteristic.Perms." + getCharacteristicPermsKey(characteristic.Properties[i]));
+        output.write(sep + "Characteristic.Perms." + perms);
         sep = ", "
     }
   }
@@ -87,7 +86,7 @@ for (var index in metadata.Characteristics) {
     // as static members of our subclass.
     output.write("// The value property of " + classyName + " must be one of the following:\n");
 
-    for (var value in characteristic.Constraints.ValidValues) {
+    for (const value of Object.keys(characteristic.Constraints.ValidValues)) {
       var name = characteristic.Constraints.ValidValues[value];
 
       var constName = name.toUpperCase().replace(/[^\w]+/g, '_');
@@ -104,8 +103,7 @@ for (var index in metadata.Characteristics) {
  * Services
  */
 
-for (var index in metadata.Services) {
-  var service = metadata.Services[index];
+for (const service of metadata.Services) {
   var classyName = service.Name.replace(/[\s\-]/g, ""); // "Smoke Sensor" -> "SmokeSensor"
 
   output.write("/**\n * Service \"" + service.Name + "\"\n */\n\n");
@@ -117,9 +115,7 @@ for (var index in metadata.Services) {
   if (service.RequiredCharacteristics) {
     output.write("\n  // Required Characteristics\n");
 
-    for (var index in service.RequiredCharacteristics) {
-      var characteristicUUID = service.RequiredCharacteristics[index];
-
+    for (const characteristicUUID of service.RequiredCharacteristics) {
       // look up the classyName from the hash we built above
       var characteristicClassyName = characteristics[characteristicUUID];
 
@@ -131,9 +127,7 @@ for (var index in metadata.Services) {
   if (service.OptionalCharacteristics) {
     output.write("\n  // Optional Characteristics\n");
 
-    for (var index in service.OptionalCharacteristics) {
-      var characteristicUUID = service.OptionalCharacteristics[index];
-
+    for (const characteristicUUID of service.OptionalCharacteristics) {
       // look up the classyName from the hash we built above
       var characteristicClassyName = characteristics[characteristicUUID];
 
@@ -163,8 +157,8 @@ function getCharacteristicFormatsKey(format) {
   if (format == 'int32') format = 'int';
 
   // look up the key in our known-formats dict
-  for (var key in Characteristic.Formats)
-    if (Characteristic.Formats[key] == format)
+  for (const validFormat of Characteristic.Formats)
+    if (validFormat == format)
       return key;
 
   throw new Error("Unknown characteristic format '" + format + "'");
@@ -172,8 +166,8 @@ function getCharacteristicFormatsKey(format) {
 
 function getCharacteristicUnitsKey(units) {
   // look up the key in our known-units dict
-  for (var key in Characteristic.Units)
-    if (Characteristic.Units[key] == units)
+  for (const validUnit of Characteristic.Units)
+    if (validUnit == units)
       return key;
 
   throw new Error("Unknown characteristic units '" + units + "'");

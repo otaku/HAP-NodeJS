@@ -39,8 +39,7 @@ output.write("\n");
 // index Characteristics for quick access while building Services
 const characteristics: Record<string, string> = {}; // characteristics[UUID] = classyName
 
-for (var index in metadata.Characteristics) {
-  var characteristic = metadata.Characteristics[index];
+for (const characteristic of metadata.Characteristics) {
   var classyName = characteristic.Name.replace(/[\s\-]/g, ""); // "Target Door State" -> "TargetDoorState"
   classyName = classyName.replace(/[.]/g, "_"); // "PM2.5" -> "PM2_5"
 
@@ -56,9 +55,7 @@ for (var index in metadata.Characteristics) {
     // as static members of our subclass.
     output.write("  // The value property of " + classyName + " must be one of the following:\n");
 
-    for (var value in characteristic.Constraints.ValidValues) {
-      var name = characteristic.Constraints.ValidValues[value];
-
+    for (const [name, value] of Object.entries(characteristic.Constraints.ValidValues)) {
       var constName = name.toUpperCase().replace(/[^\w]+/g, '_');
       if ((/^[1-9]/).test(constName)) constName = "_" + constName; // variables can't start with a number
       output.write(`  static readonly ${constName} = ${value};\n`);
@@ -93,10 +90,10 @@ for (var index in metadata.Characteristics) {
 
   output.write(",\n      perms: [");
   var sep = ""
-  for (var i in characteristic.Properties) {
-    var perms = getCharacteristicPermsKey(characteristic.Properties[i]);
+  for (const property of characteristic.Properties) {
+    var perms = getCharacteristicPermsKey(property);
     if (perms) {
-        output.write(sep + "Perms." + getCharacteristicPermsKey(characteristic.Properties[i]));
+        output.write(sep + "Perms." + perms);
         sep = ", "
     }
   }
@@ -118,8 +115,7 @@ for (var index in metadata.Characteristics) {
  * Services
  */
 
-for (var index in metadata.Services) {
-  var service = metadata.Services[index];
+for (const service of metadata.Services) {
   var classyName = service.Name.replace(/[\s\-]/g, ""); // "Smoke Sensor" -> "SmokeSensor"
 
   output.write(`/**\n * Service "${service.Name}"\n */\n\n`);
@@ -134,9 +130,7 @@ for (var index in metadata.Services) {
   if (service.RequiredCharacteristics) {
     output.write("\n    // Required Characteristics\n");
 
-    for (var index in service.RequiredCharacteristics) {
-      var characteristicUUID = service.RequiredCharacteristics[index];
-
+    for (const characteristicUUID of service.RequiredCharacteristics) {
       // look up the classyName from the hash we built above
       var characteristicClassyName = characteristics[characteristicUUID];
 
@@ -148,9 +142,7 @@ for (var index in metadata.Services) {
   if (service.OptionalCharacteristics) {
     output.write("\n    // Optional Characteristics\n");
 
-    for (var index in service.OptionalCharacteristics) {
-      var characteristicUUID = service.OptionalCharacteristics[index];
-
+    for (const characteristicUUID of service.OptionalCharacteristics) {
       // look up the classyName from the hash we built above
       var characteristicClassyName = characteristics[characteristicUUID];
 
@@ -180,7 +172,7 @@ function getCharacteristicFormatsKey(format: string) {
 
   // look up the key in our known-formats dict
   // @ts-ignore
-  for (var key in Characteristic.Formats) {
+  for (const key of Object.keys(Characteristic.Formats)) {
     // @ts-ignore
     if (Characteristic.Formats[key as keyof typeof Characteristic.Formats] == format) {
       return key;
@@ -193,7 +185,7 @@ function getCharacteristicFormatsKey(format: string) {
 function getCharacteristicUnitsKey(units: string) {
   // look up the key in our known-units dict
   // @ts-ignore
-  for (var key in Characteristic.Units) {
+  for (const key of Object.keys(Characteristic.Units)) {
     // @ts-ignore
     if (Characteristic.Units[key as keyof typeof Characteristic.Units] == units) {
       return key;

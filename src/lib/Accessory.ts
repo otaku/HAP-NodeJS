@@ -273,8 +273,7 @@ export class Accessory extends EventEmitter<Events> {
         : serviceParam;
 
     // check for UUID+subtype conflict
-    for (var index in this.services) {
-      var existing = this.services[index];
+    for (const existing of this.services) {
       if (existing.UUID === service.UUID) {
         // OK we have two Services with the same UUID. Check that each defines a `subtype` property and that each is unique.
         if (!service.subtype)
@@ -366,9 +365,7 @@ export class Accessory extends EventEmitter<Events> {
   }
 
   getService = <T extends WithUUID<typeof Service>>(name: string | T) => {
-    for (var index in this.services) {
-      var service = this.services[index];
-
+    for (const service of this.services) {
       if (typeof name === 'string' && (service.displayName === name || service.name === name || service.subtype === name))
         return service;
       else if (typeof name === 'function' && ((service instanceof name) || (name.UUID === service.UUID)))
@@ -377,9 +374,7 @@ export class Accessory extends EventEmitter<Events> {
   }
 
   getServiceById<T extends WithUUID<typeof Service>>(uuid: string | T, subType: string): Service | undefined {
-    for (const index in this.services) {
-      const service = this.services[index];
-
+    for (const service of this.services) {
       if (typeof uuid === "string" && (service.displayName === uuid || service.name === uuid) && service.subtype === subType) {
         return service;
       } else if (typeof uuid === "function" && ((service instanceof uuid) || (uuid.UUID === service.UUID)) && service.subtype === subType) {
@@ -413,8 +408,7 @@ export class Accessory extends EventEmitter<Events> {
       throw new Error("Cannot Bridge another Bridge!");
 
     // check for UUID conflict
-    for (var index in this.bridgedAccessories) {
-      var existing = this.bridgedAccessories[index];
+    for (const existing of this.bridgedAccessories) {
       if (existing.UUID === accessory.UUID)
         throw new Error("Cannot add a bridged Accessory with the same UUID as another bridged Accessory: " + existing.UUID);
     }
@@ -448,8 +442,7 @@ export class Accessory extends EventEmitter<Events> {
   }
 
   addBridgedAccessories = (accessories: Accessory[]) => {
-    for (var index in accessories) {
-      var accessory = accessories[index];
+    for (const accessory of accessories) {
       this.addBridgedAccessory(accessory, true);
     }
 
@@ -460,18 +453,12 @@ export class Accessory extends EventEmitter<Events> {
     if (accessory._isBridge)
       throw new Error("Cannot Bridge another Bridge!");
 
-    var foundMatchAccessory = false;
     // check for UUID conflict
-    for (var index in this.bridgedAccessories) {
-      var existing = this.bridgedAccessories[index];
-      if (existing.UUID === accessory.UUID) {
-        foundMatchAccessory = true;
-        this.bridgedAccessories.splice(Number.parseInt(index), 1);
-        break;
-      }
-    }
+    const foundMatchAccessory = this.bridgedAccessories.findIndex((existing) => {
+      return existing.UUID === accessory.UUID
+    });
 
-    if (!foundMatchAccessory)
+    if (foundMatchAccessory === -1)
       throw new Error("Cannot find the bridged Accessory to remove.");
 
     accessory.removeAllListeners();
@@ -482,8 +469,7 @@ export class Accessory extends EventEmitter<Events> {
   }
 
   removeBridgedAccessories = (accessories: Accessory[]) => {
-    for (var index in accessories) {
-      var accessory = accessories[index];
+    for (const accessory of accessories) {
       this.removeBridgedAccessory(accessory, true);
     }
 
@@ -498,16 +484,14 @@ export class Accessory extends EventEmitter<Events> {
   }
 
   getCharacteristicByIID = (iid: number) => {
-    for (var index in this.services) {
-      var service = this.services[index];
+    for (const service of this.services) {
       var characteristic = service.getCharacteristicByIID(iid);
       if (characteristic) return characteristic;
     }
   }
 
   getBridgedAccessoryByAID = (aid: number) => {
-    for (var index in this.bridgedAccessories) {
-      var accessory = this.bridgedAccessories[index];
+    for (const accessory of this.bridgedAccessories) {
       if (accessory.aid === aid) return accessory;
     }
   }
@@ -787,8 +771,7 @@ export class Accessory extends EventEmitter<Events> {
       this.aid = 1;
     }
 
-    for (var index in this.services) {
-      var service = this.services[index];
+    for (const service of this.services) {
       if (this._isBridge) {
         service._assignIDs(identifierCache, this.UUID, 2000000000);
       } else {
@@ -797,9 +780,7 @@ export class Accessory extends EventEmitter<Events> {
     }
 
     // now assign IDs for any Accessories we are bridging
-    for (var index in this.bridgedAccessories) {
-      var accessory = this.bridgedAccessories[index];
-
+    for (const accessory of this.bridgedAccessories) {
       accessory._assignIDs(identifierCache);
     }
 
@@ -845,8 +826,7 @@ export class Accessory extends EventEmitter<Events> {
 
     var servicesHAP = [];
 
-    for (var index in this.services) {
-      var service = this.services[index];
+    for (const service of this.services) {
       servicesHAP.push(service.toHAP(opt));
     }
 
@@ -856,8 +836,7 @@ export class Accessory extends EventEmitter<Events> {
     }];
 
     // now add any Accessories we are bridging
-    for (var index in this.bridgedAccessories) {
-      var accessory = this.bridgedAccessories[index];
+    for (const accessory of this.bridgedAccessories) {
       var bridgedAccessoryHAP = accessory.toHAP(opt);
 
       // bridgedAccessoryHAP is an array of accessories with one item - extract it
@@ -1544,8 +1523,8 @@ export class Accessory extends EventEmitter<Events> {
   }
 
   _unsubscribeEvents = (events: CharacteristicEvents) => {
-    for (var key in events) {
-      if (key.indexOf('.') !== -1) {
+    for (const key of Object.keys(events)) {
+      if (key.includes('.')) {
         try {
           var id = key.split('.');
           var aid = Number.parseInt(id[0]);
@@ -1606,8 +1585,7 @@ export class Accessory extends EventEmitter<Events> {
   }
 
   _sideloadServices = (targetServices: Service[]) => {
-    for (var index in targetServices) {
-      var target = targetServices[index];
+    for (const target of targetServices) {
       this._setupService(target);
     }
 
@@ -1711,9 +1689,8 @@ export class Accessory extends EventEmitter<Events> {
     });
 
     if (json.linkedServices) {
-      for (let serviceId in json.linkedServices) {
+      for (const [serviceId, linkedServicesKeys] of Object.entries(json.linkedServices)) {
         const primaryService = servicesMap[serviceId];
-        const linkedServicesKeys = json.linkedServices[serviceId];
 
         if (!primaryService) {
           continue

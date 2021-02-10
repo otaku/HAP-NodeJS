@@ -443,11 +443,9 @@ export class Characteristic extends EventEmitter<Events> {
    * }
    */
   setProps = (props: Partial<CharacteristicProps>) => {
-    for (var key in (props || {}))
-      if (Object.prototype.hasOwnProperty.call(props, key)) {
+    for (const key of Object.keys(props || {}))
         // @ts-ignore
         this.props[key] = props[key];
-      }
 
     if (this.props.minValue != null && this.props.maxValue != null) { // the eqeq instead of eqeqeq is important here
       if (this.props.minValue > this.props.maxValue) { // preventing DOS attack, see https://github.com/homebridge/HAP-NodeJS/issues/690

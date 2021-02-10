@@ -184,8 +184,7 @@ export class Service extends EventEmitter<Events> {
       characteristic = new characteristic(...constructorArgs) as Characteristic;
     }
     // check for UUID conflict
-    for (var index in this.characteristics) {
-      var existing = this.characteristics[index];
+    for (const existing of this.characteristics) {
       if (existing.UUID === characteristic.UUID) {
         if (characteristic.UUID === '00000052-0000-1000-8000-0026BB765291') {
           //This is a special workaround for the Firmware Revision characteristic.
@@ -251,19 +250,12 @@ export class Service extends EventEmitter<Events> {
   }
 
   removeCharacteristic = (characteristic: Characteristic) => {
-    var targetCharacteristicIndex;
+    const targetCharacteristicIndex = this.characteristics.findIndex((existingCharacteristic) => {
+      return existingCharacteristic === characteristic
+    });
 
-    for (var index in this.characteristics) {
-      var existingCharacteristic = this.characteristics[index];
-
-      if (existingCharacteristic === characteristic) {
-        targetCharacteristicIndex = index;
-        break;
-      }
-    }
-
-    if (targetCharacteristicIndex) {
-      this.characteristics.splice(Number.parseInt(targetCharacteristicIndex), 1);
+    if (targetCharacteristicIndex > -1) {
+      this.characteristics.splice(targetCharacteristicIndex, 1);
       characteristic.removeAllListeners();
 
       this.emit(ServiceEventTypes.SERVICE_CONFIGURATION_CHANGE, clone({ service: this }));
@@ -280,9 +272,7 @@ export class Service extends EventEmitter<Events> {
     // If  Service.prototype.getCharacteristic(Characteristic.Type)  does not find the characteristic,
     // but the type is in optionalCharacteristics, it adds the characteristic.type to the service and returns it.
 
-    var index, characteristic: Characteristic;
-    for (index in this.characteristics) {
-      characteristic = this.characteristics[index] as Characteristic;
+    for (const characteristic of this.characteristics) {
       if (typeof name === 'string' && characteristic.displayName === name) {
         return characteristic;
       } else if (typeof name === 'function' && ((characteristic instanceof name) || (name.UUID === characteristic.UUID))) {
@@ -290,8 +280,7 @@ export class Service extends EventEmitter<Events> {
       }
     }
     if (typeof name === 'function') {
-      for (index in this.optionalCharacteristics) {
-        characteristic = this.optionalCharacteristics[index];
+      for (const characteristic of this.optionalCharacteristics) {
         if ((characteristic instanceof name) || (name.UUID === characteristic.UUID)) {
           return this.addCharacteristic(name);
         }
@@ -306,9 +295,7 @@ export class Service extends EventEmitter<Events> {
 
   testCharacteristic = <T extends WithUUID<typeof Characteristic>>(name: string | T) => {
     // checks for the existence of a characteristic object in the service
-    var index, characteristic;
-    for (index in this.characteristics) {
-      characteristic = this.characteristics[index];
+    for (const characteristic of this.characteristics) {
       if (typeof name === 'string' && characteristic.displayName === name) {
         return true;
       } else if (typeof name === 'function' && ((characteristic instanceof name) || (name.UUID === characteristic.UUID))) {
@@ -390,8 +377,7 @@ export class Service extends EventEmitter<Events> {
   }
 
   getCharacteristicByIID = (iid: number) => {
-    for (var index in this.characteristics) {
-      var characteristic = this.characteristics[index];
+    for (const characteristic of this.characteristics) {
       if (characteristic.iid === iid)
         return characteristic;
     }
@@ -407,8 +393,7 @@ export class Service extends EventEmitter<Events> {
     }
 
     // assign IIDs to our Characteristics
-    for (var index in this.characteristics) {
-      var characteristic = this.characteristics[index];
+    for (const characteristic of this.characteristics) {
       characteristic._assignID(identifierCache, accessoryName, this.UUID, this.subtype);
     }
   }
@@ -419,8 +404,7 @@ export class Service extends EventEmitter<Events> {
   toHAP = (opt?: ToHAPOptions) => {
     var characteristicsHAP = [];
 
-    for (var index in this.characteristics) {
-      var characteristic = this.characteristics[index];
+    for (const characteristic of this.characteristics) {
       characteristicsHAP.push(characteristic.toHAP(opt));
     }
 
@@ -440,8 +424,7 @@ export class Service extends EventEmitter<Events> {
 
     if (this.linkedServices.length > 0) {
       hap['linked'] = [];
-      for (var index in this.linkedServices) {
-        var otherService = this.linkedServices[index];
+      for (const otherService of this.linkedServices) {
         hap['linked'].push(otherService.iid!);
       }
     }
@@ -458,8 +441,7 @@ export class Service extends EventEmitter<Events> {
   }
 
   _sideloadCharacteristics = (targetCharacteristics: Characteristic[]) => {
-    for (var index in targetCharacteristics) {
-      var target = targetCharacteristics[index];
+    for (const target of targetCharacteristics) {
       this._setupCharacteristic(target);
     }
 

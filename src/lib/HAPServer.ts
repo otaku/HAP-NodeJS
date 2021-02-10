@@ -274,10 +274,9 @@ export class HAPServer extends EventEmitter<Events> {
       // parse request.url (which can contain querystring, etc.) into components, then extract just the path
       var pathname = url.parse(request.url!).pathname!;
       // all request data received; now process this request
-      for (var path in HAPServer.handlers)
+      for (const [path, handler] of Object.entries(HAPServer.handlers))
         if (new RegExp('^' + path + '/?$').test(pathname)) { // match exact string and allow trailing slash
-          const handler = HAPServer.handlers[path] as keyof HAPServer;
-          this[handler](request, response, session, events, requestData);
+          this[handler as keyof HAPServer](request, response, session, events, requestData);
           return;
         }
       // nobody handled this? reply 404
@@ -747,8 +746,8 @@ export class HAPServer extends EventEmitter<Events> {
       }
       var sets = (query.id as string).split(','); // ["1.9","2.14"]
       var data: CharacteristicData[] = []; // [{aid:1,iid:9},{aid:2,iid:14}]
-      for (var i in sets) {
-        var ids = sets[i].split('.'); // ["1","9"]
+      for (const set of sets) {
+        var ids = set.split('.'); // ["1","9"]
         var aid = parseInt(ids[0]); // accessory ID
         var iid = parseInt(ids[1]); // instance ID (for characteristic)
         data.push({aid: aid, iid: iid});
@@ -760,10 +759,10 @@ export class HAPServer extends EventEmitter<Events> {
           debug("[%s] Error getting characteristics: %s", this.accessoryInfo.username, err.stack);
           // rewrite characteristics array to include error status for each characteristic requested
           characteristics = [];
-          for (var i in data) {
+          for (const characteristicData of data) {
             characteristics.push({
-              aid: data[i].aid,
-              iid: data[i].iid,
+              aid: characteristicData.aid,
+              iid: characteristicData.iid,
               status: Status.SERVICE_COMMUNICATION_FAILURE
             });
           }
@@ -814,10 +813,10 @@ export class HAPServer extends EventEmitter<Events> {
           debug("[%s] Error setting characteristics: %s", this.accessoryInfo.username, err.message);
           // rewrite characteristics array to include error status for each characteristic requested
           characteristics = [];
-          for (var i in data) {
+          for (const characteristicData of data) {
             characteristics.push({
-              aid: data[i].aid,
-              iid: data[i].iid,
+              aid: characteristicData.aid,
+              iid: characteristicData.iid,
               // @ts-ignore
               status: Status.SERVICE_COMMUNICATION_FAILURE
             });
